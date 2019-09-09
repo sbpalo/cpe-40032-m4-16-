@@ -1,11 +1,10 @@
 --[[
-    GD50
-    Match-3 Remake
+   CMPE40032
+    Candy Crush Clone (Match 3 Game)
 
     -- PlayState Class --
 
-    Author: Colton Ogden
-    cogden@cs50.harvard.edu
+
 
     State in which we can actually play, moving around a grid cursor that
     can swap two tiles; when two tiles make a legal swap (a swap that results
@@ -52,11 +51,6 @@ function PlayState:init()
             gSounds['clock']:play()
         end
     end)
-
-    -- CS50: points representation vars
-    self.seconds = 0
-    self.secondsY = 108
-    self.secondsOpacity = 255
 end
 
 function PlayState:enter(params)
@@ -64,14 +58,13 @@ function PlayState:enter(params)
     self.level = params.level
 
     -- spawn a board and place it toward the right
-    self.board = params.board or Board(VIRTUAL_WIDTH - 272, 16)
+    self.board = params.board or Board(VIRTUAL_WIDTH - 272, 16, self.level)
 
     -- grab score from params if it was passed
     self.score = params.score or 0
 
     -- score we have to reach to get to the next level
     self.scoreGoal = self.level * 1.25 * 1000
-
 end
 
 function PlayState:update(dt)
@@ -91,7 +84,7 @@ function PlayState:update(dt)
     if self.timer <= 0 then
         -- clear timers from prior PlayStates
         Timer.clear()
-        
+
         gSounds['game-over']:play()
 
         gStateMachine:change('game-over', {
@@ -111,7 +104,7 @@ function PlayState:update(dt)
         -- change to begin game state with new level (incremented)
         gStateMachine:change('begin-game', {
             level = self.level + 1,
-            score = self.score
+            score = self.score 
         })
     end
 
@@ -136,7 +129,7 @@ function PlayState:update(dt)
             -- if same tile as currently highlighted, deselect
             local x = self.boardHighlightX + 1
             local y = self.boardHighlightY + 1
-            
+
             -- if nothing is highlighted, highlight current tile
             if not self.highlightedTile then
                 self.highlightedTile = self.board.tiles[y][x]
@@ -151,17 +144,20 @@ function PlayState:update(dt)
                 gSounds['error']:play()
                 self.highlightedTile = nil
             else
-                self.canInput = false
                 -- swap grid positions of tiles
                 local tempX = self.highlightedTile.gridX
                 local tempY = self.highlightedTile.gridY
+                local tempshiny = self.highlightedTile.shiny
 
                 local newTile = self.board.tiles[y][x]
 
                 self.highlightedTile.gridX = newTile.gridX
                 self.highlightedTile.gridY = newTile.gridY
+                self.highlightedTile.shiny = newTile.shiny
+
                 newTile.gridX = tempX
                 newTile.gridY = tempY
+                newTile.shiny = tempshiny
 
                 -- swap tiles in the tiles table
                 self.board.tiles[self.highlightedTile.gridY][self.highlightedTile.gridX] =
@@ -169,45 +165,41 @@ function PlayState:update(dt)
 
                 self.board.tiles[newTile.gridY][newTile.gridX] = newTile
 
-                -- tween coordinates between the two so they swap
-                Timer.tween(0.1, {
-                    [self.highlightedTile] = {x = newTile.x, y = newTile.y},
-                    [newTile] = {x = self.highlightedTile.x, y = self.highlightedTile.y}
-                })
-                -- once the swap is finished, we can tween falling blocks as needed
-                :finish(
-                    function()
-                        local highlightedTile = self.highlightedTile
+                if self.board:calculateMatches() ~= false then 
                         
-                        if not self:calculateMatches() then
-                            gSounds['error']:play()
-                            self.highlightedTile = nil
-                            Timer.after(0.25, function() 
-                                -- swap grid positions of tiles
-                                local tempX = highlightedTile.gridX
-                                local tempY = highlightedTile.gridY
-    
-                                highlightedTile.gridX = newTile.gridX
-                                highlightedTile.gridY = newTile.gridY
-                                newTile.gridX = tempX
-                                newTile.gridY = tempY
-    
-                                -- swap tiles in the tiles table
-                                self.board.tiles[highlightedTile.gridY][highlightedTile.gridX] =
-                                highlightedTile
-    
-                                self.board.tiles[newTile.gridY][newTile.gridX] = newTile
-    
-                                -- tween coordinates between the two so they swap
-                                Timer.tween(0.1, {
-                                    [highlightedTile] = {x = newTile.x, y = newTile.y},
-                                    [newTile] = {x = highlightedTile.x, y = highlightedTile.y}
-                                })
-                        end)
-                    end
-                    self.board:check()
-                    self.canInput = true
-                end)
+                    -- tween coordinates between the two so they swap
+                    Timer.tween(0.1, {
+                        [self.highlightedTile] = {x = newTile.x, y = newTile.y},
+                        [newTile] = {x = self.highlightedTile.x, y = self.highlightedTile.y}
+                    })
+                    -- once the swap is finished, we can tween falling blocks as needed
+                    :finish(function()
+                        if self:calculateMatches() then
+                            --Check the entire board for possible matches. If there isn't any, reset the board.
+                            if self.board:CalculateMatchesForEntireBoard() == false and not gameOverEntered then
+                                self.board:initializeTiles()
+                            end
+                        end 
+                    end)
+                else 
+                    --swap back if there is no match
+                    -- swap grid positions of tiles
+                    tempX = self.highlightedTile.gridX
+                    tempY = self.highlightedTile.gridY
+
+                    self.highlightedTile.gridX = newTile.gridX
+                    self.highlightedTile.gridY = newTile.gridY
+                    
+                    newTile.gridX = tempX
+                    newTile.gridY = tempY
+
+                    -- swap tiles in the tiles table
+                    self.board.tiles[self.highlightedTile.gridY][self.highlightedTile.gridX] = self.highlightedTile
+                    self.board.tiles[newTile.gridY][newTile.gridX] = newTile
+                    
+                    gSounds["error"]:play()
+                    self.highlightedTile = nil
+                end
             end
         end
     end
@@ -226,26 +218,27 @@ function PlayState:calculateMatches()
 
     -- if we have any matches, remove them and tween the falling blocks that result
     local matches = self.board:calculateMatches()
-    
-    if matches then
 
+    if matches then
         gSounds['match']:stop()
         gSounds['match']:play()
 
         -- add score for each match
         for k, match in pairs(matches) do
-            --self.score = self.score + #match * 50
-            
+            -- self.score = self.score + #match * 50
+
+            --update score according to variety
+            --higher variet, higher score
             for i, tile in pairs(match) do
-                self.score = self.score + 50 * tile.variety
+                self.score = self.score + 50 * (tile.variety)
             end
 
-            --CS50: extends the timer by 1 second per tile in a match
+            -- 1 second per tile added to timer
             self.timer = self.timer + #match
             self.seconds = self.seconds + #match
         end
 
-        --CS50: wait 1 second, then move up and fade out points then reset the vars
+        --wait 1 second, then move up and fade out points then reset the vars
         Timer.after(1, function() 
             Timer.tween(1, {
                 [self] = { secondsY = 80, secondsOpacity = 0},
@@ -256,7 +249,6 @@ function PlayState:calculateMatches()
                 self.secondsOpacity = 255
             end)
         end)
-            
         -- remove any tiles that matched from the board, making empty spaces
         self.board:removeMatches()
 
@@ -266,7 +258,7 @@ function PlayState:calculateMatches()
         -- first, tween the falling tiles over 0.25s
         Timer.tween(0.25, tilesToFall):finish(function()
             local newTiles = self.board:getNewTiles()
-            
+
             -- then, tween new tiles that spawn from the ceiling over 0.25s to fill in
             -- the new upper gaps that exist
             Timer.tween(0.25, newTiles):finish(function()
@@ -286,6 +278,13 @@ function PlayState:render()
     -- render board of tiles
     self.board:render()
 
+    -- draw points gained in the match
+    if self.seconds > 0 then
+        love.graphics.setColor(99, 155, 255, self.secondsOpacity)
+        love.graphics.printf('+ ' .. tostring(self.seconds) .. ' s', 82, self.secondsY, 182, 'center')
+        love.graphics.setColor(99, 155, 255, 255)
+    end
+
     -- render highlighted tile if it exists
     if self.highlightedTile then
         -- multiply so drawing white rect makes it brighter
@@ -298,7 +297,6 @@ function PlayState:render()
         -- back to alpha
         love.graphics.setBlendMode('alpha')
     end
-
     -- render highlight rect color based on timer
     if self.rectHighlighted then
         love.graphics.setColor(217, 87, 99, 255)
@@ -322,10 +320,5 @@ function PlayState:render()
     love.graphics.printf('Goal : ' .. tostring(self.scoreGoal), 20, 80, 182, 'center')
     love.graphics.printf('Timer: ' .. tostring(self.timer), 20, 108, 182, 'center')
 
-    -- CS50: draw points gained in the match
-    if self.seconds > 0 then
-        love.graphics.setColor(99, 155, 255, self.secondsOpacity)
-        love.graphics.printf('+ ' .. tostring(self.seconds) .. ' s', 82, self.secondsY, 182, 'center')
-        love.graphics.setColor(99, 155, 255, 255)
-    end
+    
 end

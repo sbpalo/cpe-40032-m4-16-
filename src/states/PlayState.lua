@@ -51,6 +51,9 @@ function PlayState:init()
             gSounds['clock']:play()
         end
     end)
+    self.seconds = 0
+    self.secondsY = 108
+    self.secondsOpacity = 255
 end
 
 function PlayState:enter(params)
@@ -122,10 +125,29 @@ function PlayState:update(dt)
         elseif love.keyboard.wasPressed('right') then
             self.boardHighlightX = math.min(7, self.boardHighlightX + 1)
             gSounds['select']:play()
+            -- use the mouse to highlight the tile when the keyboard is not active
+        elseif not self.isKeyboard then
+            -- convert mouse position from screen to game
+            local mouseCursorX, mouseCursorY = push:toGame(love.mouse.getPosition())
+            -- convert to relative postion to the board
+            local mouseCursorX = mouseCursorX - (VIRTUAL_WIDTH - 272)
+            local mouseCursorY = mouseCursorY - 16
+            -- only hightlight the tile if the mouse cursor is within the board
+            if  mouseCursorX >= 0 and mouseCursorX <= 255 and mouseCursorY >= 0 and mouseCursorY <= 255 then
+
+                -- convert to grid position
+                local mouseCursorGridX = math.floor(mouseCursorX / 32)
+                local mouseCursorGridY = math.floor(mouseCursorY / 32)
+
+                self.boardHighlightX = mouseCursorGridX
+                self.boardHighlightY = mouseCursorGridY
+            end
         end
- 
+    
+
         -- if we've pressed enter, to select or deselect a tile...
-        if love.keyboard.wasPressed('enter') or love.keyboard.wasPressed('return') then
+        if love.keyboard.wasPressed('enter') or love.keyboard.wasPressed('return') or 
+            love.keyboard.wasPressed('space') or  love.mouse.wasPressed(1) then
             -- if same tile as currently highlighted, deselect
             local x = self.boardHighlightX + 1
             local y = self.boardHighlightY + 1
@@ -277,13 +299,6 @@ end
 function PlayState:render()
     -- render board of tiles
     self.board:render()
-
-    -- draw points gained in the match
-    if self.seconds > 0 then
-        love.graphics.setColor(99, 155, 255, self.secondsOpacity)
-        love.graphics.printf('+ ' .. tostring(self.seconds) .. ' s', 82, self.secondsY, 182, 'center')
-        love.graphics.setColor(99, 155, 255, 255)
-    end
 
     -- render highlighted tile if it exists
     if self.highlightedTile then

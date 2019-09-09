@@ -1,9 +1,6 @@
 --[[
-    GD50
-    Match-3 Remake
-
-    Author: Colton Ogden
-    cogden@cs50.harvard.edu
+    CMPE40032
+    Candy Crush Clone (Match 3 Game)
 
     Match-3 has taken several forms over the years, with its roots in games
     like Tetris in the 80s. Bejeweled, in 2001, is probably the most recognized
@@ -38,15 +35,14 @@ WINDOW_HEIGHT = 720
 VIRTUAL_WIDTH = 512
 VIRTUAL_HEIGHT = 288
 
--- CS50: shiny tile spawning odds
-SHINY_TILE = 0.98
+
 
 function love.load()
     -- initialize our nearest-neighbor filter
     love.graphics.setDefaultFilter('nearest', 'nearest')
 
     -- window bar title
-    love.window.setTitle('Match 3')
+    love.window.setTitle('Crush 3')
 
     -- seed the RNG
     math.randomseed(os.time())
@@ -83,9 +79,19 @@ function love.resize(w, h)
     push:resize(w, h)
 end
 
+
 function love.keypressed(key)
     -- add to our table of keys pressed this frame
     love.keyboard.keysPressed[key] = true
+  
+end
+
+function love.mousepressed(x,y,button)
+    love.mouse.buttonsPressed[button] = true
+end
+
+function love.mouse.wasPressed(button)
+   return love.mouse.buttonsPressed[button]
 end
 
 function love.keyboard.wasPressed(key)
@@ -99,7 +105,7 @@ end
 function love.update(dt)
     -- scroll background, used across all states
     backgroundX = backgroundX - backgroundScrollSpeed * dt
-    
+
     -- if we've scrolled the entire image, reset it to 0
     if backgroundX <= -1024 + VIRTUAL_WIDTH - 4 + 51 then
         backgroundX = 0
@@ -107,7 +113,10 @@ function love.update(dt)
 
     gStateMachine:update(dt)
 
-    love.keyboard.keysPressed = {}
+      -- initialize input table
+      love.keyboard.keysPressed = {}
+      love.mouse.buttonsPressed = {}
+      
 end
 
 function love.draw()
@@ -115,7 +124,7 @@ function love.draw()
 
     -- scrolling background drawn behind every state
     love.graphics.draw(gTextures['background'], backgroundX, 0)
-    
+
     gStateMachine:render()
     push:finish()
 end

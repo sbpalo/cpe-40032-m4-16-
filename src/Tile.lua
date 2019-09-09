@@ -1,11 +1,10 @@
---[[
-    GD50
-    Match-3 Remake
+-[[
+   CMPE40032
+    Candy Crush Clone (Match 3 Game)
 
     -- Tile Class --
 
-    Author: Colton Ogden
-    cogden@cs50.harvard.edu
+
 
     The individual tiles that make up our game board. Each Tile can have a
     color and a variety, with the varietes adding extra points to the matches.
@@ -14,6 +13,9 @@
 Tile = Class{}
 
 function Tile:init(x, y, color, variety)
+
+    SHINY_TILE = 0.98
+
     -- board positions
     self.gridX = x
     self.gridY = y
@@ -26,6 +28,9 @@ function Tile:init(x, y, color, variety)
     self.color = color
     self.variety = variety
 
+
+    --SHINY TILES
+   
     self.shiny = math.random() > SHINY_TILE and true or false
     
     if self.shiny then
@@ -35,10 +40,19 @@ function Tile:init(x, y, color, variety)
     self.shinyTable = { timer = nil,  factor = 255 } 
 end
 
-function Tile:render(x, y)
-    
-    
+function Tile:update(dt)
 
+end
+
+--[[
+    Function to swap this tile with another tile, tweening the two's positions.
+]]
+function Tile:swap(tile)
+
+end
+
+function Tile:render(x, y)
+   
     -- draw shadow
     love.graphics.setColor(34, 32, 52, 255)
     love.graphics.draw(gTextures['main'], gFrames['tiles'][self.color][self.variety],

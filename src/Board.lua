@@ -32,7 +32,7 @@ function Board:initializeTiles()
         for tileX = 1, 8 do
             if level == nil then 
                 level = 1 
-            end 
+            end  
             -- create a new tile at X,Y with a random color and variety
             table.insert(self.tiles[tileY], Tile(tileX, tileY, math.random(8), math.random(math.min(6, level))))
         end

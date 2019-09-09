@@ -30,11 +30,13 @@ function Board:initializeTiles()
         table.insert(self.tiles, {})
 
         for tileX = 1, 8 do
-            if level == nil then 
-                level = 1 
-            end  
+
+            if level == nil then
+                level = 1
+            end
+            --ensure level 1 starts just with simple flat blocks
             -- create a new tile at X,Y with a random color and variety
-            table.insert(self.tiles[tileY], Tile(tileX, tileY, math.random(8), math.random(math.min(6, level))))
+            table.insert(self.tiles[tileY], Tile(tileX, tileY, math.random(16), math.random(math.min(level,6))))
         end
     end
 
@@ -207,11 +209,8 @@ function Board:calculateMatches()
     -- return matches table if > 0, else just return false
     return #self.matches > 0 and self.matches or false
 end
---[[
-    Check the entire board for matches. If there isn't any matches, reset the board.
-    Move up,down,left and right to validate.
-    Returns true if there is a match, otherwise false.
-]]
+
+
 function Board:CalculateMatchesForEntireBoard()
     local matchTable = {}
 
@@ -311,7 +310,7 @@ function Board:getFallingTiles()
             local tile = self.tiles[y][x]
 
             if space then
-                -- if the current tile is not a space, bring this down to the lowest space
+                -- if the current tile is *not* a space, bring this down to the lowest space
                 if tile then
                     -- put the tile in the correct spot in the board and fix its grid positions
                     self.tiles[spaceY][x] = tile
